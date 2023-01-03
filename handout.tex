@@ -1,0 +1,685 @@
+\documentclass[11pt]{article}
+\textwidth = 6.5in
+\textheight = 9in
+\hoffset=-.8in
+\voffset=-.8in
+
+
+\usepackage[pass]{geometry}
+\usepackage{color}   % Necessary for colored links
+\usepackage{xcolor}   % for 'violet' line numbers 
+%\usepackage[hypertex]{hyperref}
+\usepackage[hidelinks]{hyperref}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\usepackage{sectsty}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{marginnote}
+\hypersetup{
+    colorlinks,
+    linkcolor={blue!70!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!90!black}
+}
+
+\newcommand\MyTitle{CSCI 463 Assignment 3 -- Memory Simulator} 
+
+%\lstset{numbers=left, numberstyle=\small, stepnumber=1, numbersep=5pt, language={c++}}
+\lstset{numbers=left, numberstyle=\small, stepnumber=1, numbersep=5pt, basicstyle=\footnotesize\ttfamily}
+
+\sectionfont{\Large\sf\bfseries}
+\subsectionfont{\large\sf\bfseries}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{fancy}
+% supress normal headings and footters
+\fancyhf{}
+% remove the heading rule
+%\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+
+\newcommand\lfText{{\sf\scriptsize Copyright \copyright\ 2020,2021,2022 John Winans. All Rights Reserved}\\
+{\sf\scriptsize\FooterText}}
+
+\lfoot{\lfText}
+\rfoot{Page \thepage\ of \pageref{LastPage}}
+\lhead{\MyTitle}
+
+% Sub-footer that shows the git version in the lfoot defined above
+\ifdefined\GitFileName
+    \newcommand{\FooterText}{\tt \GitFileName\\
+\GitDescription}
+\else
+    \newcommand{\FooterText}{\emph{--UNKNOWN--}}
+\fi
+
+% force a footer (but no header) onto the first page as well
+\fancypagestyle{plain}{%
+\renewcommand{\headrulewidth}{0pt} %
+\fancyhf{} % clear all header and footer fields
+\lfoot{\lfText} %
+\rfoot{Page \thepage\ of \pageref{LastPage}}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For one-sided line numbers in the left margin
+%\usepackage{lineno}
+%\linenumbers
+%\renewcommand\linenumberfont{\normalfont\tiny\sffamily\bfseries\color{violet}}
+%\setlength\linenumbersep{6mm}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{.51em}
+
+% do not number the sections
+%\setcounter{secnumdepth}{0}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%\pagenumbering{gobble}
+ 
+\thispagestyle{plain}
+\centerline{\huge\MyTitle}
+\vspace{.2in}
+\centerline{20 Points}
+
+\begin{abstract}
+\noindent In this assignment, you will write a C++ program to simulate 
+a computer system memory.
+This is the first of a multi-part assignment concluding with a simple
+computing machine capable of executing real programs compiled with \verb@g++@.
+The purpose is to gain an understanding of a machine, its instruction 
+set and how its features are used by realistic programs written in C/C++.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem Description}
+
+To simulate a computer system's memory, create a class to represent a memory
+whose size is defined at run-time via command-line argument.
+
+Your memory class will include utility member functions to load it by reading 
+a binary file, print its contents with a hex dump, a method to determine
+if a given address is {\em legal}, and methods that allow a caller
+to read or write 8, 16 and 32-bit values from (or to) any legal address.
+
+Your program will accept parameters from the command line, read data from a 
+file and print all of its non-error output to standard out (aka stdout) via 
+\verb@std::cout@ and usage or file loading error messages to standard error 
+(aka stderr) via \verb@std::cerr@. (No other output may be printed to stderr.
+Note that \verb@check_illegal()@ warnings are neither simulator nor user {\em errors}
+and therefore they must be written to stdout.)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Files You Must Write}
+
+You will write a C++ program suitable for execution on \verb@hopper.cs.niu.edu@ 
+(or \verb@turing.cs.niu.edu@.)
+
+Your source files {\em MUST} be named exactly as shown below or they will fail 
+to compile and you will receive zero points for this assignment.
+
+Create a project directory for this assignment and place within it the source files defined below.
+
+\begin{itemize}
+\item[\tt main.cpp] Your \verb@main()@ and \verb@usage()@ function definitions will go here.
+\item[\tt hex.h] The declarations of your hex formatting class will go here.
+\item[\tt hex.cpp] The definitions of your \verb@hex@ class member functions will go here.
+\item[\tt memory.h] The definition of your \verb@memory@ class will go here.
+\item[\tt memory.cpp] The \verb@memory@ class member function definitions will go here.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\tt main.cpp}
+
+You will be provided the code for a suitable \verb@main()@ function for this 
+assignment.
+
+Do not alter the code it as its output must match the reference key or else 
+your output will be graded as wrong.
+
+You must add Doxygen comments where appropriate.
+
+The provided \verb@usage()@ function prints an appropriate ``Usage'' error message 
+and ``Pattern'' to stderr and terminates the program in the traditional manner 
+as discussed here:
+
+\url{https://en.wikipedia.org/wiki/Usage_message}
+
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={usage() Function}]
+static void usage()
+{
+    cerr << "Usage: rv32i [-m hex-mem-size] infile" << endl;
+    cerr << "    -m specify memory size (default = 0x100)" << endl;
+    exit(1);
+}
+\end{lstlisting}
+\end{minipage}
+
+
+%\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={main() Function}]
+int main(int argc, char **argv)
+{
+    uint32_t memory_limit = 0x100;  // default memory size is 0x100
+
+    int opt;
+    while ((opt = getopt(argc, argv, "m:")) != -1)
+    {
+        switch(opt)
+        {
+        case 'm':
+            {
+                std::istringstream iss(optarg);
+                iss >> std::hex >> memory_limit;
+            }
+            break;
+        default:
+            usage();
+        }
+    }
+
+    if (optind >= argc)
+        usage();    // missing filename
+
+    memory mem(memory_limit);
+    mem.dump();
+
+    if (!mem.load_file(argv[optind]))
+        usage();
+
+    mem.dump();
+
+    cout << mem.get_size() << endl;
+    cout << hex::to_hex32(mem.get8(0)) << endl;
+    cout << hex::to_hex32(mem.get16(0)) << endl;
+    cout << hex::to_hex32(mem.get32(0)) << endl;
+    cout << hex::to_hex0x32(mem.get8(0)) << endl;
+    cout << hex::to_hex0x32(mem.get16(0)) << endl;
+    cout << hex::to_hex0x32(mem.get32(0)) << endl;
+    cout << hex::to_hex8(mem.get8(0)) << endl;
+    cout << hex::to_hex8(mem.get16(0)) << endl;
+    cout << hex::to_hex8(mem.get32(0)) << endl;
+    cout << hex::to_hex0x32(mem.get32(0x1000)) << endl;
+
+    mem.set8(0x10, 0x12);
+    mem.set16(0x14, 0x1234);
+    mem.set32(0x18, 0x87654321);
+
+    cout << hex::to_hex0x32(mem.get8_sx(0x0f)) << endl;
+    cout << hex::to_hex0x32(mem.get8_sx(0x7f)) << endl;
+    cout << hex::to_hex0x32(mem.get8_sx(0x80)) << endl;
+    cout << hex::to_hex0x32(mem.get8_sx(0xe3)) << endl;
+    cout << hex::to_hex0x32(mem.get16_sx(0xe0)) << endl;
+    cout << hex::to_hex0x32(mem.get32_sx(0xe0)) << endl;
+
+    mem.dump();
+    return 0;
+}
+\end{lstlisting}
+%\end{minipage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt hex.h} and {\tt hex.cpp}}
+
+These files will contain a class with some utility functions for formatting 
+numbers as hex strings for printing.
+
+Your \verb@hex.h@ file must contain the following class plus header guards and 
+appropriate Doxygen comments:\\
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={hex.h}]
+class hex
+{
+public: 
+    static std::string to_hex8(uint8_t i);
+    static std::string to_hex32(uint32_t i);
+    static std::string to_hex0x32(uint32_t i);
+};
+\end{lstlisting}
+\end{minipage}
+
+Your \verb@hex.cpp@ file must contain the implementation of the three method functions.
+
+An observation: This class is to be used for simplifying the application.  Your
+code must use it to format a hex value any time it needs to do so.  
+Therefore the \verb@std::hex@ I/O manipulator must never appear in any file 
+other than \verb@hex.cpp@ (and in main() when reading the command-line args.)
+
+\begin{itemize}
+\item \verb@std::string to_hex8(uint8_t i);@
+
+This function must return a \verb@std::string@ with exactly 2 hex digits 
+representing the 8 bits of the \verb@i@ argument.
+
+The following code snipit is one way to format an 8-bit integer into a 
+2-character hex string with a leading zero:
+
+\begin{minipage}{\textwidth}
+{\footnotesize
+\begin{verbatim}
+    std::string hex::to_hex8(uint8_t i)
+    {
+        std::ostringstream os;
+        os << std::hex << std::setfill('0') << std::setw(2) << static_cast<uint16_t>(i);
+        return os.str();
+    }
+\end{verbatim}
+}
+\end{minipage}
+
+Note that the \verb@static_cast@ is necessary here to prevent the insertion 
+operator (\verb@<<@) from treating the 8-bit integer as a character and printing
+it incorrectly.  (The printing of other integer sizes does not have this problem 
+and therefore can be printed without such a cast.)
+
+\item \verb@std::string to_hex32(uint32_t i);@
+
+This function must return a \verb@std::string@ with 8 hex digits representing the
+32 bits of the \verb@i@ argument.
+
+\item \verb@std::string to_hex0x32(uint32_t i);@
+
+This function must return a \verb@std::string@ beginning with \verb@0x@, followed by
+the 8 hex digits representing the 32 bits of the \verb@i@ argument.  It must be
+implemented by creating a string by concatenating a \verb@0x@ to the output of
+\verb@to_hex32()@ like this:
+\begin{verbatim}
+    return std::string("0x")+to_hex32(i);
+\end{verbatim}
+
+\end{itemize}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{{\tt memory.h} and {\tt memory.cpp}}
+
+Your \verb@memory.h@ file must include the following class definition plus header 
+guards and appropriate Doxygen comments.
+
+Note that failure to implement this design accurately will cause {\em significant} 
+problems with future assignments that you will implement by extending this one!
+
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={class memory}]
+class memory : public hex
+{
+public:
+    memory(uint32_t s);
+    ~memory();
+
+    bool check_illegal(uint32_t addr) const;
+    uint32_t get_size() const;
+    uint8_t get8(uint32_t addr) const;
+    uint16_t get16(uint32_t addr) const;
+    uint32_t get32(uint32_t addr) const;
+
+    int32_t get8_sx(uint32_t addr) const;
+    int32_t get16_sx(uint32_t addr) const;
+    int32_t get32_sx(uint32_t addr) const;
+
+    void set8(uint32_t addr, uint8_t val);
+    void set16(uint32_t addr, uint16_t val);
+    void set32(uint32_t addr, uint32_t val);
+
+    void dump() const;
+
+    bool load_file(const std::string &fname);
+
+private:
+    std::vector<uint8_t> mem;
+};
+\end{lstlisting}
+\end{minipage}
+
+You should feel free to inline any methods where you think it is appropriate.
+
+\begin{itemize}
+\item \verb@memory(uint32_t siz);@
+
+Allocate \verb@siz@ bytes in the \verb@mem@ vector and initialize every byte/element to \verb@0xa5@.
+
+Implement the following rounding logic (before allocating the \verb@siz@ elements)
+to make the job of formatting and aligning your last line of output in your \verb@dump()@
+method much, {\em much} easier:
+\begin{verbatim}
+    siz = (siz+15)&0xfffffff0;  // round the length up, mod-0x10
+\end{verbatim}
+
+Note that initializing the \verb@mem@ vector can then be done immediately after rounding
+up \verb@siz@ by calling the \verb@resize(count, value)@ method on the \verb@mem@ vector.  
+See: \href{https://en.cppreference.com/w/cpp/container/vector/resize}{std::vector::resize}.
+\begin{verbatim}
+    mem.resize(siz, 0xa5);
+\end{verbatim}
+
+
+\item \verb@~memory();@
+
+In the destructor clean up anything necessary.
+
+\item \verb@bool check_illegal(uint32_t i) const;@
+
+Return \verb@true@ if the given address \verb@i@ does not represent an element that is present
+in the \verb@mem@ vector.  (ie. Is there actually a byte at the given address or not?)
+
+If the given address is {\em not} within the range of valid addresses of the simulated memory then 
+print a warning message to stdout formatted as shown below:
+\begin{verbatim}
+    WARNING: Address out of range: 0x00001000
+\end{verbatim}
+and return true.
+
+Obviously, formatting this warning message will involve using your \verb@hex::to_hex0x32()@ function.
+
+\item \verb@uint32_t get_size() const;@
+
+Return the (rounded up) number of bytes in the simulated memory.
+
+\item \verb@uint8_t get8(uint32_t addr) const;@
+
+Check to see if the given \verb@addr@ is in your \verb@mem@ by calling 
+\verb@check_illegal()@.  If \verb@addr@ is in the valid range then return 
+the value of the byte from your simulated memory at the given address.
+If \verb@addr@ is {\em not} in the valid range then return zero to the caller.
+
+Note that this is the {\em only} code that will ever read values from 
+the \verb@mem@ vector.
+
+\item \verb@uint16_t get16(uint32_t addr) const;@
+
+This function must call your \verb@get8()@ function twice to get two bytes 
+and then combine them in little-endian\footnote{See 
+\href{https://github.com/johnwinans/rvalp}{RVALP} and/or 
+\href{https://en.wikipedia.org/wiki/Endianness}{Wikipedia}
+for a discussion of {\em little-endian} order.} 
+order to create a 16-bit return value.
+Because you are using your \verb@get8()@ function, the job of validating the
+addresses of the two bytes will be taken care of there.  Do not redundantly 
+check the validity in this function.
+
+\item \verb@uint32_t get32(uint32_t addr) const;@
+
+This function must call \verb@get16()@ function twice and combine the
+results in little-endian order similar to the implementation of \verb@get16()@.
+
+
+\item \verb@int32_t get8_sx(uint32_t addr) const;@
+
+This function will call \verb@get8()@ and then return the sign-extended value of
+the byte as a 32-bit signed integer. 
+
+\item \verb@int32_t get16_sx(uint32_t addr) const;@
+
+This function will call \verb@get16()@ and then return the sign-extended value of
+the 16-bit value as a 32-bit signed integer. 
+
+\item \verb@int32_t get32_sx(uint32_t addr) const;@
+
+This function will call \verb@get32()@ and then return the value as a 32-bit 
+signed integer.
+
+Hint: Do it like this: \verb@return get32(addr);@
+
+
+
+\item \verb@void set8(uint32_t addr, uint8_t val);@
+
+This function will call \verb@check_illegal()@ to verify the \verb@addr@
+argument is valid.
+If \verb@addr@ is valid then set the byte in the simulated memory at that
+address to the given \verb@val@.
+If \verb@addr@ is not valid then discard the data and return to the caller.
+
+Note that this, and the constructor, are the {\em only} code that will ever 
+write values into the \verb@mem@ vector.
+
+\item \verb@void set16(uint32_t addr, uint16_t val);@
+
+This function will call \verb@set8()@ twice to store the given \verb@val@
+in little-endian order into the simulated memory starting at the address given in 
+the \verb@addr@ argument.
+
+\item \verb@void set32(uint32_t addr, uint32_t val);@
+
+This function will call \verb@set16()@ twice to store the given \verb@val@
+in little-endian order into the simulated memory starting at the address given in 
+the \verb@addr@ argument.
+
+
+
+
+\item \verb@void dump() const;@
+
+Dump the entire contents of your simulated memory in hex with the corresponding 
+ASCII\footnote{See \href{https://github.com/johnwinans/rvalp}{RVALP} and/or 
+\href{https://en.wikipedia.org/wiki/ASCII}{Wikipedia} for a discussion of the ASCII character set.}
+characters on the right {\em exactly, space-for-space} in the format shown 
+in the output section below.
+
+In order to format the ASCII part of the dump lines, fetch a byte from the memory and 
+then use \verb@isprint(3)@ to determine if you are to show an ASCII character or a 
+dot (\verb@.@) when the byte does not have a valid printable value:
+\begin{verbatim}
+    uint8_t ch = get8(i);
+    ch = isprint(ch) ? ch : '.';
+\end{verbatim}
+This code fragment will leave the character to be printed in the ASCII portion
+of the dump in the \verb@ch@ variable.
+The \verb@isprint()@ function is a standard C library function you can read about in 
+the on line manual or google it.
+
+\item \verb@bool load_file(const std::string &fname);@
+
+Open the file named \verb@fname@ in binary mode and read its contents
+into your simulated memory.  You may open a file in binary mode like this:
+\begin{verbatim}
+    std::ifstream infile(fname, std::ios::in|std::ios::binary);
+\end{verbatim}
+If the file can not be opened, then print a suitable message to stderr 
+including the name of the file and return \verb@false@:
+\begin{verbatim}
+    Can't open file 'testdata' for reading.
+\end{verbatim}
+
+You must make certain that the file can fit into your memory!  One
+simple way to do that is to read the file one byte at-a-time and
+check the byte address before you write to it by calling 
+\verb@check_illegal()@.  If the address is valid, keep going.  If the
+address is not valid, then print the following message to stderr, 
+close the file, and return \verb@false@:
+\begin{verbatim}
+    Program too big.
+\end{verbatim}
+If the file loads OK then close the file and return \verb@true@.
+
+In order to read the file contents with the extraction operator (\verb@>>@), 
+you will want to set \verb@noskipws@ before reading from it like this:\footnote{See 
+\url{https://en.cppreference.com/w/cpp/io/manip/skipws} for more information.}
+\begin{verbatim}
+    uint8_t i;
+    infile >> std::noskipws;
+    for (uint32_t addr = 0; infile >> i; ++addr)
+    {
+        ...
+    }
+\end{verbatim}
+
+
+\item \verb@std::vector<uint8_t> mem;@
+
+A vector of bytes representing the simulated memory.  Initialize it
+with the given size in your constructor.
+
+The element at \verb@mem[0]@ represents the byte in the simulated memory at address
+zero.  The element at \verb@mem[1]@ represents the byte in the simulated memory at 
+address one and so on.
+
+The legal memory addresses are those that have elements present in the \verb@mem@ vector.
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Input}
+
+Your program will accept an optional memory-size argument and a filename on
+the command line as shown in the \verb@main()@ code snipit above.
+
+The Usage statement for this application is:
+
+\verb@memsim [-m hex-mem-size] filename@    
+
+The optional \verb@-m@ argument is a hex number representing the amount of 
+memory to simulate.  When not present, the default size must be \verb@0x100@.
+
+The last argument is the name of a file to load into the simulated memory.  
+
+Some test files may be provided for you.
+It is your responsibility to create your own test files as you see fit to 
+verify the proper operation of your code.
+
+It should go without saying that you should try loading files with sizes that are 
+less than, exactly equal to, and greater than the number of simulated memory bytes.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Output}
+
+Your program's output will be a dump of the simulated memory after it has 
+been constructed then again after it has been loaded.  Then and some 
+lines of output from the test calls to the \verb@setX()@, \verb@getX()@ 
+and \verb@to_hexX()@ functions and another dump to know that the \verb@setX()@
+functions are working properly.
+
+For example if your program is executed like this with a file that contains
+``hello world 1 2 3 4'' on a line by itself then:
+\begin{verbatim}
+    ./memsim -m 2e hello.in
+\end{verbatim}
+will display the following output:\\
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={Sample Run}]
+00000000: a5 a5 a5 a5 a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *................*
+00000010: a5 a5 a5 a5 a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *................*
+00000020: a5 a5 a5 a5 a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *................*
+00000000: 68 65 6c 6c 6f 20 77 6f  72 6c 64 20 31 20 32 20 *hello world 1 2 *
+00000010: 33 20 34 0a a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *3 4.............*
+00000020: a5 a5 a5 a5 a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *................*
+48
+00000068
+00006568
+6c6c6568
+0x00000068
+0x00006568
+0x6c6c6568
+68
+68
+68
+WARNING: Address out of range: 0x00001000
+WARNING: Address out of range: 0x00001001
+WARNING: Address out of range: 0x00001002
+WARNING: Address out of range: 0x00001003
+0x00000000
+0x00000020
+WARNING: Address out of range: 0x0000007f
+0x00000000
+WARNING: Address out of range: 0x00000080
+0x00000000
+WARNING: Address out of range: 0x000000e3
+0x00000000
+WARNING: Address out of range: 0x000000e0
+WARNING: Address out of range: 0x000000e1
+0x00000000
+WARNING: Address out of range: 0x000000e0
+WARNING: Address out of range: 0x000000e1
+WARNING: Address out of range: 0x000000e2
+WARNING: Address out of range: 0x000000e3
+0x00000000
+00000000: 68 65 6c 6c 6f 20 77 6f  72 6c 64 20 31 20 32 20 *hello world 1 2 *
+00000010: 12 20 34 0a 34 12 a5 a5  21 43 65 87 a5 a5 a5 a5 *. 4.4...!Ce.....*
+00000020: a5 a5 a5 a5 a5 a5 a5 a5  a5 a5 a5 a5 a5 a5 a5 a5 *................*
+\end{lstlisting}
+\end{minipage}
+
+Note that if you create a test file on Windows, then the byte whose value is \verb@0x0a@
+(the newline character) might be different than shown above.\footnote{
+Text files created on DOS/Windows machines have different line endings than files 
+created on Unix/Linux. DOS uses carriage return and line feed 
+(``\textbackslash r\textbackslash n'') as a line ending, while Unix uses 
+just a line feed (``\textbackslash n'').}
+
+Other examples may available on the course web site.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{How To Hand In Your Program}
+
+When you are ready to turn in your assignment, make sure that the only files in your
+project directory is/are the source files defined and discussed above.
+Then, in the parent of your project directory, use the \verb@mailprog.463@ 
+command to send the contents of the files in your project directory to 
+your TA.  For example, if your project directory is called \verb@memsim@ then
+run mailprog like this:
+
+\begin{verbatim}
+mailprog.463 memsim
+\end{verbatim}
+
+%If \verb@mailprog.463@ detects and problems, it will inform you that you have 
+%not followed the instructions given above and provide some hints how
+%to proceed.  If you followed these instructions you will see the following:
+%
+%\begin{verbatim}
+%winans@hopper:~/$ mailprog.463 memsim
+%
+%**********************************************************************
+%* WARNING : Do NOT use this program to mail notes to your Instructor *
+%*           Doing so may result in the loss of your program !!       *
+%**********************************************************************
+%
+%Enter program number for your assignment : 3
+%shar: Saving /tmp/mailprog.11111 (text)
+%winans@hopper:~/$ 
+%\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Grading}
+
+The grade you receive on this programming assignment will scored according to the
+syllabus and its ability to compile and execute on the Computer Science Department's 
+computer.
+
+{\em It is your responsibility to create your own test data files suitable for 
+testing your program thoroughly.} 
+
+When we grade your assignment, we will compile it on \verb@hopper.cs.niu.edu@ 
+using these exact commands:
+
+\begin{minipage}{\textwidth}
+\begin{lstlisting}[frame=single, title={Compiling Your Assignment}]
+g++ -g -ansi -pedantic -Wall -Werror -Wextra -std=c++14 -c -o main.o main.cpp
+g++ -g -ansi -pedantic -Wall -Werror -Wextra -std=c++14 -c -o memory.o memory.cpp
+g++ -g -ansi -pedantic -Wall -Werror -Wextra -std=c++14 -c -o hex.o hex.cpp
+g++ -g -ansi -pedantic -Wall -Werror -Wextra -std=c++14 -o memsim main.o memory.o hex.o 
+\end{lstlisting}
+\end{minipage}
+
+Your program will then be run multiple times using different memory sizes and
+test data files and the output compared against a reference implementation of this
+assignment.
+
+\end{document}
